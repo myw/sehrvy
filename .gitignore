@@ -1,0 +1,4 @@
+# Ignore vim and emacs temporary files
+
+*.swp
+*~
