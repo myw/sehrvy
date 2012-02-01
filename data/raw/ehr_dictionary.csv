@@ -1,0 +1,14 @@
+Variable Name,Definition
+Vendor Name,Name of EHR vendor
+EHR Product Name,Name of EHR product
+EHR Product Version,Version of EHR product
+Product Classification,Whether product meets all Meaningful Use requirements (Complete) or meets only part of the Meaningful Use requirements (Modular)
+Product Setting,Practice setting for which product is designed for (Ambulatory or Inpatient)
+Attestation month,Month that the provider successfully attested to MU
+Business State/Territory,Business location of provider who successfully attested to MU (state/territory)
+Provider Type,Whether attestor was an eligible professional (EP) or eligible hospital (Hospital)
+Specialty,Specialty or provider type
+Program Year,Year of EHR Incentive Program
+Payment Year,Payment year of EHR Incentive Program
+Program Type,Whether the attestor registered under Medicare or Medicare/Medicaid
+ID,Unique ID for each Attestor
