@@ -1,0 +1,7 @@
+#!/usr/bin/env perl
+use strict;
+use warnings;
+
+use Sehrvy::Server;
+
+Sehrvy::Server->run(port => 8080);
