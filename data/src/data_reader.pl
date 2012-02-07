@@ -7,16 +7,16 @@ use DBI;
 sub delete_tables
 {
     my $dbh = shift;
-    $dbh->do ("DROP VIEW Everything");
-    $dbh->do ("DROP VIEW Original");
-    $dbh->do ("DROP VIEW ProductVersions");
-    $dbh->do ("DROP VIEW VendorProducts");
-    $dbh->do ("DROP TABLE Attestations");
-    $dbh->do ("DROP TABLE ProviderSpecialties");
-    $dbh->do ("DROP TABLE Versions");
-    $dbh->do ("DROP TABLE Products");
-    $dbh->do ("DROP TABLE Vendors");
-    $dbh->do ("DROP TABLE StateCodes");
+    $dbh->do ("DROP VIEW IF EXISTS Everything");
+    $dbh->do ("DROP VIEW IF EXISTS Original");
+    $dbh->do ("DROP VIEW IF EXISTS ProductVersions");
+    $dbh->do ("DROP VIEW IF EXISTS VendorProducts");
+    $dbh->do ("DROP TABLE IF EXISTS Attestations");
+    $dbh->do ("DROP TABLE IF EXISTS ProviderSpecialties");
+    $dbh->do ("DROP TABLE IF EXISTS Versions");
+    $dbh->do ("DROP TABLE IF EXISTS Products");
+    $dbh->do ("DROP TABLE IF EXISTS Vendors");
+    $dbh->do ("DROP TABLE IF EXISTS StateCodes");
 }
 
 sub create_tables
@@ -28,36 +28,36 @@ sub create_tables
               state_name VARCHAR(40))");
     
     $dbh->do ("CREATE TABLE Vendors(
-              vendor_id INTEGER PRIMARY KEY IDENTITY,
+              vendor_id INTEGER PRIMARY KEY AUTO_INCREMENT,
               vendor_name VARCHAR(100))") or die "Cannot create table: " . $dbh->errstr ();
     $dbh->do ("ALTER TABLE Vendors
               ADD CONSTRAINT no_duplicate_vendors UNIQUE (vendor_name)");
 
     $dbh->do ("CREATE TABLE Products(
-              product_id INTEGER PRIMARY KEY IDENTITY,
-              vendor_id INTEGER FOREIGN KEY REFERENCES Vendors(vendor_id),
+              product_id INTEGER PRIMARY KEY AUTO_INCREMENT,
+              vendor_id INTEGER REFERENCES Vendors(vendor_id),
               product_name VARCHAR(100))") or die "Cannot create table: " . $dbh->errstr ();
     $dbh->do ("ALTER TABLE Products
               ADD CONSTRAINT no_duplicate_products UNIQUE (vendor_id,product_name)");
 
     $dbh->do ("CREATE TABLE Versions(
-              version_id INTEGER PRIMARY KEY IDENTITY,
-              product_id INTEGER FOREIGN KEY REFERENCES Products(product_id),
+              version_id INTEGER PRIMARY KEY AUTO_INCREMENT,
+              product_id INTEGER REFERENCES Products(product_id),
               version_name VARCHAR(100))") or die "Cannot create table: " . $dbh->errstr ();
     $dbh->do ("ALTER TABLE Versions
               ADD CONSTRAINT no_duplicate_versions UNIQUE (product_id,version_name)");
 
     $dbh->do ("CREATE TABLE ProviderSpecialties(
-              provider_specialty_id INTEGER PRIMARY KEY IDENTITY,
+              provider_specialty_id INTEGER PRIMARY KEY AUTO_INCREMENT,
               provider_specialty_name VARCHAR(100))");
 
     $dbh->do ("CREATE TABLE Attestations(
-              attestation_id INTEGER PRIMARY KEY IDENTITY,
-              version_id INTEGER FOREIGN KEY REFERENCES Versions(version_id),
-              provider_specialty_id INTEGER FOREIGN KEY REFERENCES ProviderSpecialties(provider_specialty_id),
+              attestation_id INTEGER PRIMARY KEY AUTO_INCREMENT,
+              version_id INTEGER REFERENCES Versions(version_id),
+              provider_specialty_id INTEGER REFERENCES ProviderSpecialties(provider_specialty_id),
               attestation_classification CHAR(1),
               attestation_setting CHAR(1),
-              provider_state CHAR(2) FOREIGN KEY REFERENCES StateCodes(state_code),
+              provider_state CHAR(2) REFERENCES StateCodes(state_code),
               provider_type CHAR(1),
               attestation_month INTEGER,
               program_year INTEGER,
@@ -255,7 +255,8 @@ sub add_if_necessary
 
 
 
-my $dbh = DBI->connect ("dbi:ODBC:Test") or die "Cannot connect: $DBI::errstr";
+#my $dbh = DBI->connect ("dbi:ODBC:Test") or die "Cannot connect: $DBI::errstr";
+my $dbh = DBI->connect("dbi:mysql:sehrvy") or die "Cannot connect: $DBI::errstr";
 #my $sth;
 
 delete_tables($dbh);
