@@ -1,8 +1,16 @@
 #!/usr/bin/perl -w
 use strict;
 use warnings;
-#use Text::ParseWords;
 use DBI;
+
+my $dbh = DBI->connect("dbi:mysql:sehrvy") or die "Cannot connect: $DBI::errstr";
+
+delete_tables($dbh);
+create_tables($dbh);
+read_state_codes($dbh);
+read_data($dbh);
+
+$dbh->disconnect;
 
 sub delete_tables
 {
@@ -251,139 +259,4 @@ sub add_if_necessary
     }
     $$handles[0]->finish;
     return $row[0];
-}
-
-
-
-#my $dbh = DBI->connect ("dbi:ODBC:Test") or die "Cannot connect: $DBI::errstr";
-my $dbh = DBI->connect("dbi:mysql:sehrvy") or die "Cannot connect: $DBI::errstr";
-#my $sth;
-
-delete_tables($dbh);
-create_tables($dbh);
-read_state_codes($dbh);
-read_data($dbh);
-tree_output($dbh);
-#query_test($dbh);
-#count_products($dbh);
-#print_specialties($dbh);
-#print_attestations($dbh);
-#print_original($dbh);
-
-$dbh->disconnect;
-
-sub count_products
-{
-    my $dbh = shift;
-    my $sth = $dbh->prepare("SELECT vendor_id , COUNT(version_id) FROM ProductVersions GROUP BY vendor_id ORDER BY count(version_id) DESC");
-    $sth->execute();
-    my $results = $sth->fetchall_arrayref();
-    $sth = $dbh->prepare("SELECT vendor_name FROM Vendors WHERE vendor_id = ?");
-    foreach (@$results)
-    {
-        $sth->execute($$_[0]);
-        my @name = $sth->fetchrow_array;
-        print "$name[0] - $$_[1]\n";
-    }
-    $sth->finish;
-}
-
-sub print_attestations
-{
-    my $dbh = shift;
-    my $zz = $dbh->prepare("SELECT * FROM Attestations");
-    $zz->execute();
-    while(my @qq = $zz->fetchrow_array)
-    {
-        print "@qq\n";
-    }
-}
-
-sub print_specialties
-{
-    my $dbh = shift;
-    my $zz = $dbh->prepare("SELECT * FROM ProviderSpecialties");
-    $zz->execute();
-    while(my @qq = $zz->fetchrow_array)
-    {
-        print "@qq\n";
-    }
-}
-
-
-
-sub query_test
-{
-    my $dbh = shift;
-    my $zz = $dbh->prepare("SELECT product_id FROM Products WHERE product_name LIKE '%at%'");
-    $zz->execute();
-    my $ans = $zz->fetchall_arrayref();
-
-    $zz = $dbh->prepare("SELECT vendor_name , product_name , version_name FROM ProductVersions WHERE product_id = ?");
-    foreach (@$ans)
-    {
-        $zz->execute(@$_[0]);
-        while (my @qq = $zz->fetchrow_array)
-        {
-            print map{"$_;"} @qq;
-            print "\n";
-        }
-        $zz->finish;
-    }
-}
-
-sub print_original
-{
-    my $dbh = shift;
-    my $zz = $dbh->prepare("SELECT * FROM Original");
-    $zz->execute();
-    while(my @qq = $zz->fetchrow_array)
-    {
-        $qq[3] = $qq[3] eq "C" ? "Complete EHR" : "Modular EHR";
-        $qq[4] = $qq[4] eq "A" ? "Ambulatory" : "Inpatient";
-        $qq[7] = $qq[7] eq "E" ? "EP" : "Hospital";
-        $qq[11] = $qq[11] eq "M" ? "Medicare" : "Medicare/Medicaid";
-        my $last = pop @qq;
-        print map{"$_\t"} @qq;
-        print "$last\n";
-    }
-}
-
-
-
-
-
-sub tree_output
-{
-    my $dbh = shift;
-    my $zz = $dbh->prepare("SELECT vendor_id , vendor_name FROM Vendors");
-    $zz->execute();
-    my $vendor_list = $zz->fetchall_arrayref();
-    
-    $zz = $dbh->prepare("SELECT product_id , product_name FROM Products WHERE vendor_id = ?");
-    foreach my $temp (@$vendor_list)
-    {
-        $zz->execute($$temp[0]);
-        $$temp[0]=$zz->fetchall_arrayref();
-    }
-
-    $zz = $dbh->prepare("SELECT version_name FROM Versions WHERE product_id = ?");
-    foreach my $outer(@$vendor_list)
-    {
-        print "$$outer[1]\n";
-        my @continue = $$outer[0];
-        foreach my $inner(@continue)
-        {
-           foreach my $inner2(@$inner)
-           {
-                #print "$$inner2[0]\n";
-                print "\t$$inner2[1]\n";
-                $zz->execute($$inner2[0]);
-                while (my @qq = $zz->fetchrow_array)
-                {
-                    print "\t\t@qq\n";
-                }
-           }
-        }
-    }
 }
