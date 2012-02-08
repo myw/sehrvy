@@ -6,10 +6,10 @@ use DBI;
 my $dbh = DBI->connect("dbi:mysql:sehrvy") or die "Cannot connect: $DBI::errstr";
 
 #count_products($dbh);
-#print_attestations($dbh);
+print_attestations($dbh);
 #print_specialties($dbh);
 #query_test($dbh);
-print_original($dbh);
+#print_original($dbh);
 #tree_output($dbh);
 
 $dbh->disconnect;

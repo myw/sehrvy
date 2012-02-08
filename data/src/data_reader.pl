@@ -12,6 +12,8 @@ read_data($dbh);
 
 $dbh->disconnect;
 
+
+# Delete all tables in the database
 sub delete_tables
 {
     my $dbh = shift;
@@ -27,6 +29,8 @@ sub delete_tables
     $dbh->do ("DROP TABLE IF EXISTS StateCodes");
 }
 
+
+# Create all tables
 sub create_tables
 {
     my $dbh = shift;
@@ -68,7 +72,7 @@ sub create_tables
               attestation_month INTEGER,
               program_year INTEGER,
               payment_year INTEGER,
-              program_type VARCHAR(80),
+              program_type VARCHAR(100),
               attestation_gov_id VARCHAR(20))") or die "Cannot create table: " . $dbh->errstr ();
     
     $dbh->do ("CREATE VIEW VendorProducts AS
@@ -134,6 +138,8 @@ sub create_tables
               INNER JOIN StateCodes ON Attestations.provider_state = StateCodes.state_code");
 }
 
+
+# Read state codes and names into the database
 sub read_state_codes
 {
     my $dbh = shift;
@@ -149,10 +155,11 @@ sub read_state_codes
         chomp($line);
         my @states = split(/,/,$line);
         $add_state->execute(@states);
-        $cached_states{$states[1]} = $states[0];
+        $cached_states{lc($states[1])} = $states[0];
     }
 }
 
+# Read EHR data into the database
 sub read_data
 {
     my $dbh = shift;
@@ -176,22 +183,6 @@ sub read_data
 
     my $get_provider_specialty = $dbh->prepare("SELECT provider_specialty_id FROM ProviderSpecialties WHERE provider_specialty_name = ?") or die "Cannot prepare: " . $dbh->errstr ();
     my $add_provider_specialty = $dbh->prepare("INSERT INTO ProviderSpecialties (provider_specialty_name) VALUES (?)");
-    
-    my $find_state_code = $dbh->prepare("SELECT state_code FROM StateCodes WHERE state_name = ?");
-    
-    my $add_attestation = $dbh->prepare("INSERT INTO Attestations
-                                        (version_id,
-                                        provider_specialty_id,
-                                        attestation_classification,
-                                        attestation_setting,
-                                        attestation_month,
-                                        provider_state,
-                                        provider_type,
-                                        program_year,
-                                        payment_year,
-                                        program_type,
-                                        attestation_gov_id)
-                                        VALUES (?,?,?,?,?,?,?,?,?,?,?)");
     
     my $discard_headers = <FILE>;
     my @lines;
@@ -233,10 +224,7 @@ sub read_data
         $tokenized_line[3] = substr $tokenized_line[3],0,1;
         
         # Replace state with state code
-        #$find_state_code->execute($tokenized_line[5]);
-        #my @stn = $find_state_code->fetchrow_array();
-        #$tokenized_line[5] = $stn[0];
-        $tokenized_line[5] = $cached_states{$tokenized_line[5]};
+        $tokenized_line[5] = $cached_states{lc($tokenized_line[5])};
         
         # Shorten provider_type to one-character code
         die unless ($tokenized_line[6] eq "EP" or $tokenized_line[6] eq "Hospital");
@@ -248,27 +236,20 @@ sub read_data
         
         # @tokenized_line now contains all arguments for adding row to attestations table
         
-        #$add_attestation->execute(@tokenized_line);
         cached_add(\@tokenized_line,\@lines);
     }
-    #print "Now!\n";
-    add_all(\@lines);
     
-    print "@lines";
+    add_all(\@lines);
 }
 
 sub cached_add
 {
-    
-    
     my $tokenized_line = shift;
     my $current = shift;
     push @$current,$tokenized_line;
     my $numel = @$current;
     
     add_all($current) if ($numel >= 10000);
-    
-    #print "$test\n";
 }
 
 sub add_all
@@ -293,7 +274,6 @@ sub add_all
     {
         my $temp = shift @$current;
         $add_attestation->execute(@$temp);
-        #print "@$temp\n";
     }
     $dbh->commit;
     $dbh->{AutoCommit} = 1;
