@@ -51,7 +51,7 @@ sub print_attestations
 sub print_specialties
 {
     my $dbh = shift;
-    my $sth = $dbh->prepare("SELECT * FROM ProviderSpecialties");
+    my $sth = $dbh->prepare("SELECT * FROM ProviderSpecialties ORDER BY provider_specialty_name");
     $sth->execute();
     while(my @row = $sth->fetchrow_array)
     {
@@ -85,10 +85,11 @@ sub query_test
 sub print_original
 {
     my $dbh = shift;
-    my $sth = $dbh->prepare("SELECT * FROM Original");
+    my $sth = $dbh->prepare("SELECT * FROM Original ORDER BY attestation_gov_id");
     $sth->execute();
     while(my @row = $sth->fetchrow_array)
     {
+        foreach (@row) {$_ = '.' unless defined};
         $row[3] = $row[3] eq "C" ? "Complete EHR" : "Modular EHR";
         $row[4] = $row[4] eq "A" ? "Ambulatory" : "Inpatient";
         $row[7] = $row[7] eq "E" ? "EP" : "Hospital";
