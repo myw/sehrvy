@@ -9,8 +9,8 @@ my $dbh = DBI->connect("dbi:mysql:sehrvy") or die "Cannot connect: $DBI::errstr"
 #print_attestations($dbh);
 #print_specialties($dbh);
 #query_test($dbh);
-#print_original($dbh);
-tree_output($dbh);
+print_original($dbh);
+#tree_output($dbh);
 
 $dbh->disconnect;
 

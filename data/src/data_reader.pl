@@ -37,23 +37,21 @@ sub create_tables
     
     $dbh->do ("CREATE TABLE Vendors(
               vendor_id INTEGER PRIMARY KEY AUTO_INCREMENT,
-              vendor_name VARCHAR(100))") or die "Cannot create table: " . $dbh->errstr ();
-    $dbh->do ("ALTER TABLE Vendors
-              ADD CONSTRAINT no_duplicate_vendors UNIQUE (vendor_name)");
+              vendor_name VARCHAR(100) UNIQUE KEY)") or die "Cannot create table: " . $dbh->errstr ();
 
     $dbh->do ("CREATE TABLE Products(
               product_id INTEGER PRIMARY KEY AUTO_INCREMENT,
               vendor_id INTEGER REFERENCES Vendors(vendor_id),
               product_name VARCHAR(100))") or die "Cannot create table: " . $dbh->errstr ();
     $dbh->do ("ALTER TABLE Products
-              ADD CONSTRAINT no_duplicate_products UNIQUE (vendor_id,product_name)");
+              ADD UNIQUE KEY (vendor_id,product_name)");
 
     $dbh->do ("CREATE TABLE Versions(
               version_id INTEGER PRIMARY KEY AUTO_INCREMENT,
               product_id INTEGER REFERENCES Products(product_id),
               version_name VARCHAR(100))") or die "Cannot create table: " . $dbh->errstr ();
     $dbh->do ("ALTER TABLE Versions
-              ADD CONSTRAINT no_duplicate_versions UNIQUE (product_id,version_name)");
+              ADD UNIQUE KEY (product_id,version_name)");
 
     $dbh->do ("CREATE TABLE ProviderSpecialties(
               provider_specialty_id INTEGER PRIMARY KEY AUTO_INCREMENT,
@@ -141,6 +139,7 @@ sub read_state_codes
     my $dbh = shift;
     my $file = "../raw/states.csv";
     open(FILE,$file) or die "Couldn't open $file";
+    our %cached_states;
     
     my $add_state = $dbh->prepare("INSERT INTO StateCodes (state_code,state_name)
                                   VALUES (?,?)");
@@ -150,12 +149,18 @@ sub read_state_codes
         chomp($line);
         my @states = split(/,/,$line);
         $add_state->execute(@states);
+        $cached_states{$states[1]} = $states[0];
     }
 }
 
 sub read_data
 {
     my $dbh = shift;
+    my %cached_vendors;
+    my %cached_products;
+    my %cached_versions;
+    my %cached_specialties;
+    our %cached_states;
     
     my $file = "../raw/ehr_data.txt";
     open(FILE,$file) or die "Couldn't open $file";
@@ -189,6 +194,7 @@ sub read_data
                                         VALUES (?,?,?,?,?,?,?,?,?,?,?)");
     
     my $discard_headers = <FILE>;
+    my @lines;
     while (my $line = <FILE>)
     {   
         chomp($line);
@@ -198,22 +204,22 @@ sub read_data
         # Get vendor ID (adding vendor to Vendor table if necessary)
         my @handles = ($get_vendor,$add_vendor);
         my @args = (shift @tokenized_line);
-        my $vendor_id = add_if_necessary(\@handles,\@args);
+        my $vendor_id = add_if_necessary(\@handles,\@args,\%cached_vendors);
         
         # Get product ID (adding product to Product table if necessary)
         @handles = ($get_product,$add_product);
         @args = ($vendor_id,shift @tokenized_line);
-        my $product_id = add_if_necessary(\@handles,\@args);
+        my $product_id = add_if_necessary(\@handles,\@args,\%cached_products);
     
         # Get version ID (adding version to Version table if necessary)
         @handles = ($get_version,$add_version);
         @args = ($product_id,shift @tokenized_line);
-        my $version_id = add_if_necessary(\@handles,\@args);
+        my $version_id = add_if_necessary(\@handles,\@args,\%cached_versions);
         
         # Get provider specialty ID (adding provider specialty to ProviderSpecialty table if necessary)
         @handles = ($get_provider_specialty,$add_provider_specialty);
         @args = (splice(@tokenized_line,5,1));
-        my $provider_id = add_if_necessary(\@handles,\@args);
+        my $provider_id = add_if_necessary(\@handles,\@args,\%cached_specialties);
         
         # Add foreign keys to the beginning of our line
         unshift @tokenized_line,($version_id,$provider_id);
@@ -227,9 +233,10 @@ sub read_data
         $tokenized_line[3] = substr $tokenized_line[3],0,1;
         
         # Replace state with state code
-        $find_state_code->execute($tokenized_line[5]);
-        my @stn = $find_state_code->fetchrow_array();
-        $tokenized_line[5] = $stn[0];
+        #$find_state_code->execute($tokenized_line[5]);
+        #my @stn = $find_state_code->fetchrow_array();
+        #$tokenized_line[5] = $stn[0];
+        $tokenized_line[5] = $cached_states{$tokenized_line[5]};
         
         # Shorten provider_type to one-character code
         die unless ($tokenized_line[6] eq "EP" or $tokenized_line[6] eq "Hospital");
@@ -240,23 +247,70 @@ sub read_data
         $tokenized_line[9] = $tokenized_line[9] eq "Medicare" ? "M" : "B";
         
         # @tokenized_line now contains all arguments for adding row to attestations table
-        $add_attestation->execute(@tokenized_line);
+        
+        #$add_attestation->execute(@tokenized_line);
+        cached_add(\@tokenized_line,\@lines);
     }
+    #print "Now!\n";
+    add_all(\@lines);
+    
+    print "@lines";
+}
+
+sub cached_add
+{
+    
+    
+    my $tokenized_line = shift;
+    my $current = shift;
+    push @$current,$tokenized_line;
+    my $numel = @$current;
+    
+    add_all($current) if ($numel >= 10000);
+    
+    #print "$test\n";
+}
+
+sub add_all
+{
+    my $add_attestation = $dbh->prepare_cached("INSERT INTO Attestations
+                                        (version_id,
+                                        provider_specialty_id,
+                                        attestation_classification,
+                                        attestation_setting,
+                                        attestation_month,
+                                        provider_state,
+                                        provider_type,
+                                        program_year,
+                                        payment_year,
+                                        program_type,
+                                        attestation_gov_id)
+                                        VALUES (?,?,?,?,?,?,?,?,?,?,?)");
+    
+    my $current = shift;
+    $dbh->{AutoCommit} = 0;
+    while(@$current)
+    {
+        my $temp = shift @$current;
+        $add_attestation->execute(@$temp);
+        #print "@$temp\n";
+    }
+    $dbh->commit;
+    $dbh->{AutoCommit} = 1;
 }
 
 sub add_if_necessary
 {
     my $handles = shift;
     my $arguments = shift;
+    my $cached = shift;
     
+    return $$cached{"@$arguments"} if exists $$cached{"@$arguments"};
+    
+    $$handles[1]->execute(@$arguments);
     $$handles[0]->execute(@$arguments);
     my @row = $$handles[0]->fetchrow_array;
-    if(!@row)
-    {
-        $$handles[1]->execute(@$arguments);
-        $$handles[0]->execute(@$arguments);
-        @row = $$handles[0]->fetchrow_array;
-    }
-    $$handles[0]->finish;
+    $$cached{"@$arguments"} = $row[0];
+    
     return $row[0];
 }
