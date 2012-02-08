@@ -74,8 +74,9 @@ sub create_tables
               provider_state CHAR(2) NOT NULL,
               provider_type CHAR(1) NOT NULL,
               attestation_month SMALLINT UNSIGNED NOT NULL,
-              program_year INTEGER NOT NULL,
-              payment_year INTEGER NOT NULL,
+              attestation_year INTEGER NOT NULL,
+              program_year INT UNSIGNED,
+              payment_year INT UNSIGNED,
               program_type CHAR(1) NOT NULL,
               attestation_gov_id INT UNSIGNED NOT NULL,
               FOREIGN KEY (version_id) REFERENCES Versions(version_id),
@@ -177,7 +178,7 @@ sub read_data
     my %cached_specialties;
     our %cached_states;
     
-    my $file = "../raw/ehr_data.txt";
+    my $file = "../raw/ehr_data_new.txt";
     open(FILE,$file) or die "Couldn't open $file";
 
     my $get_vendor = $dbh->prepare("SELECT vendor_id FROM Vendors WHERE vendor_name=?") or die "Cannot prepare: " . $dbh->errstr ();
@@ -213,16 +214,16 @@ sub read_data
         # Get version ID (adding version to Version table if necessary)
         @handles = ($get_version,$add_version);
         @args = ($product_id,shift @tokenized_line);
-        my $version_id = add_if_necessary(\@handles,\@args,\%cached_versions);
+        my $version_id = add_if_necessary(\@handles,\@args,\%cached_versions);    
         
         # Get provider specialty ID (adding provider specialty to ProviderSpecialty table if necessary)
         @handles = ($get_provider_specialty,$add_provider_specialty);
-        @args = (splice(@tokenized_line,5,1));
+        @args = (splice(@tokenized_line,6,1));
         my $provider_id = add_if_necessary(\@handles,\@args,\%cached_specialties);
         
         # Add foreign keys to the beginning of our line
         unshift @tokenized_line,($version_id,$provider_id);
-           
+        
         # Shorten attestation_classification to one-character code
         die unless ($tokenized_line[2] eq "Complete EHR" or $tokenized_line[2] eq "Modular EHR");
         $tokenized_line[2] = substr $tokenized_line[2],0,1;
@@ -230,18 +231,22 @@ sub read_data
         # Shorten attestation_setting to one-character code
         die unless ($tokenized_line[3] eq "Ambulatory" or $tokenized_line[3] eq "Inpatient");
         $tokenized_line[3] = substr $tokenized_line[3],0,1;
-        
+      
         # Replace state with state code
-        $tokenized_line[5] = $cached_states{lc($tokenized_line[5])};
+        print "$tokenized_line[6]\n" unless exists($cached_states{lc($tokenized_line[6])});
+        $tokenized_line[6] = $cached_states{lc($tokenized_line[6])};
         
         # Shorten provider_type to one-character code
-        die unless ($tokenized_line[6] eq "EP" or $tokenized_line[6] eq "Hospital");
-        $tokenized_line[6] = substr $tokenized_line[6],0,1;
+        die unless ($tokenized_line[7] eq "EP" or $tokenized_line[7] eq "Hospital");
+        $tokenized_line[7] = substr $tokenized_line[7],0,1;
+        
+        $tokenized_line[8] = undef if $tokenized_line[8] eq '.';
+        $tokenized_line[9] = undef if $tokenized_line[9] eq '.';
         
         # Shorten program_type to one-character code
-        die unless ($tokenized_line[9] eq "Medicare" or $tokenized_line[9] eq "Medicare/Medicaid");
-        $tokenized_line[9] = $tokenized_line[9] eq "Medicare" ? "M" : "B";
-        
+        die unless ($tokenized_line[10] eq "Medicare" or $tokenized_line[10] eq "Medicare/Medicaid");
+        $tokenized_line[10] = $tokenized_line[10] eq "Medicare" ? "M" : "B";
+            
         # @tokenized_line now contains all arguments for adding row to attestations table
         
         cached_add(\@tokenized_line,\@lines);
@@ -268,13 +273,14 @@ sub add_all
                                         attestation_classification,
                                         attestation_setting,
                                         attestation_month,
+                                        attestation_year,
                                         provider_state,
                                         provider_type,
                                         program_year,
                                         payment_year,
                                         program_type,
                                         attestation_gov_id)
-                                        VALUES (?,?,?,?,?,?,?,?,?,?,?)");
+                                        VALUES (?,?,?,?,?,?,?,?,?,?,?,?)");
     
     my $current = shift;
     $dbh->{AutoCommit} = 0;
@@ -293,12 +299,12 @@ sub add_if_necessary
     my $arguments = shift;
     my $cached = shift;
     
-    return $$cached{"@$arguments"} if exists $$cached{"@$arguments"};
+    return $$cached{lc("@$arguments")} if exists $$cached{lc("@$arguments")};
     
     $$handles[1]->execute(@$arguments);
     $$handles[0]->execute(@$arguments);
     my @row = $$handles[0]->fetchrow_array;
-    $$cached{"@$arguments"} = $row[0];
+    $$cached{lc("@$arguments")} = $row[0];
     
     return $row[0];
 }

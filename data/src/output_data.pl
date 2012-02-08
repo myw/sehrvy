@@ -42,6 +42,7 @@ sub print_attestations
     $sth->execute();
     while(my @row = $sth->fetchrow_array)
     {
+        foreach (@row) {$_ = 'NULL' unless defined};
         print "@row\n";
     }
 }
