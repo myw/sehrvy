@@ -178,7 +178,7 @@ sub read_data
     my %cached_specialties;
     our %cached_states;
     
-    my $file = "../raw/ehr_data_new_sanitized.txt";
+    my $file = "../raw/ehr_data_sanitized.txt";
     open(FILE,$file) or die "Couldn't open $file";
 
     my $get_vendor = $dbh->prepare("SELECT vendor_id FROM Vendors WHERE vendor_name=?") or die "Cannot prepare: " . $dbh->errstr ();
