@@ -37,43 +37,51 @@ sub create_tables
     
     $dbh->do ("CREATE TABLE StateCodes(
               state_code CHAR(2) PRIMARY KEY,
-              state_name VARCHAR(40))");
+              state_name VARCHAR(40) NOT NULL)");
     
     $dbh->do ("CREATE TABLE Vendors(
-              vendor_id INTEGER PRIMARY KEY AUTO_INCREMENT,
-              vendor_name VARCHAR(100) UNIQUE KEY)") or die "Cannot create table: " . $dbh->errstr ();
+              vendor_id INT UNSIGNED PRIMARY KEY AUTO_INCREMENT,
+              vendor_name VARCHAR(100) NOT NULL,
+              UNIQUE KEY no_duplicate_vendors (vendor_name)
+              )") or die "Cannot create table: " . $dbh->errstr ();
 
     $dbh->do ("CREATE TABLE Products(
-              product_id INTEGER PRIMARY KEY AUTO_INCREMENT,
-              vendor_id INTEGER REFERENCES Vendors(vendor_id),
-              product_name VARCHAR(100))") or die "Cannot create table: " . $dbh->errstr ();
-    $dbh->do ("ALTER TABLE Products
-              ADD UNIQUE KEY (vendor_id,product_name)");
+              product_id INT UNSIGNED PRIMARY KEY AUTO_INCREMENT,
+              vendor_id INT UNSIGNED NOT NULL,
+              product_name VARCHAR(100) NOT NULL,
+              FOREIGN KEY(vendor_id) REFERENCES Vendors(vendor_id),
+              UNIQUE KEY no_duplicate_products (vendor_id,product_name)
+              )") or die "Cannot create table: " . $dbh->errstr ();
 
     $dbh->do ("CREATE TABLE Versions(
-              version_id INTEGER PRIMARY KEY AUTO_INCREMENT,
-              product_id INTEGER REFERENCES Products(product_id),
-              version_name VARCHAR(100))") or die "Cannot create table: " . $dbh->errstr ();
-    $dbh->do ("ALTER TABLE Versions
-              ADD UNIQUE KEY (product_id,version_name)");
+              version_id INT UNSIGNED PRIMARY KEY AUTO_INCREMENT,
+              product_id INT UNSIGNED NOT NULL,
+              version_name VARCHAR(100) NOT NULL,
+              FOREIGN KEY(product_id) REFERENCES Products(product_id),
+              UNIQUE KEY no_duplicate_versions (product_id,version_name)
+              )") or die "Cannot create table: " . $dbh->errstr ();
 
     $dbh->do ("CREATE TABLE ProviderSpecialties(
-              provider_specialty_id INTEGER PRIMARY KEY AUTO_INCREMENT,
-              provider_specialty_name VARCHAR(100))");
+              provider_specialty_id INT UNSIGNED PRIMARY KEY AUTO_INCREMENT,
+              provider_specialty_name VARCHAR(100) NOT NULL)");
 
     $dbh->do ("CREATE TABLE Attestations(
-              attestation_id INTEGER PRIMARY KEY AUTO_INCREMENT,
-              version_id INTEGER REFERENCES Versions(version_id),
-              provider_specialty_id INTEGER REFERENCES ProviderSpecialties(provider_specialty_id),
-              attestation_classification CHAR(1),
-              attestation_setting CHAR(1),
-              provider_state CHAR(2) REFERENCES StateCodes(state_code),
-              provider_type CHAR(1),
-              attestation_month INTEGER,
-              program_year INTEGER,
-              payment_year INTEGER,
-              program_type VARCHAR(100),
-              attestation_gov_id VARCHAR(20))") or die "Cannot create table: " . $dbh->errstr ();
+              attestation_id INT UNSIGNED PRIMARY KEY AUTO_INCREMENT,
+              version_id INT UNSIGNED NOT NULL,
+              provider_specialty_id INT UNSIGNED NOT NULL,
+              attestation_classification CHAR(1) NOT NULL,
+              attestation_setting CHAR(1) NOT NULL,
+              provider_state CHAR(2) NOT NULL,
+              provider_type CHAR(1) NOT NULL,
+              attestation_month SMALLINT UNSIGNED NOT NULL,
+              program_year INTEGER NOT NULL,
+              payment_year INTEGER NOT NULL,
+              program_type CHAR(1) NOT NULL,
+              attestation_gov_id INT UNSIGNED NOT NULL,
+              FOREIGN KEY (version_id) REFERENCES Versions(version_id),
+              FOREIGN KEY (provider_specialty_id) REFERENCES ProviderSpecialties(provider_specialty_id),
+              FOREIGN KEY (provider_state) REFERENCES StateCodes(state_code)
+              )") or die "Cannot create table: " . $dbh->errstr ();
     
     $dbh->do ("CREATE VIEW VendorProducts AS
               SELECT Vendors.vendor_name , Products.product_name
