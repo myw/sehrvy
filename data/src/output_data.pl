@@ -6,10 +6,10 @@ use DBI;
 my $dbh = DBI->connect("dbi:mysql:sehrvy") or die "Cannot connect: $DBI::errstr";
 
 #count_products($dbh);
-print_attestations($dbh);
+#print_attestations($dbh);
 #print_specialties($dbh);
 #query_test($dbh);
-#print_original($dbh);
+print_original($dbh);
 #tree_output($dbh);
 
 $dbh->disconnect;
@@ -85,16 +85,17 @@ sub query_test
 sub print_original
 {
     my $dbh = shift;
-    my $sth = $dbh->prepare("SELECT * FROM Original ORDER BY attestation_gov_id");
+    my $sth = $dbh->prepare("SELECT * FROM Original ORDER BY attestation_id");
     $sth->execute();
     while(my @row = $sth->fetchrow_array)
     {
         foreach (@row) {$_ = '.' unless defined};
         $row[3] = $row[3] eq "C" ? "Complete EHR" : "Modular EHR";
         $row[4] = $row[4] eq "A" ? "Ambulatory" : "Inpatient";
-        $row[7] = $row[7] eq "E" ? "EP" : "Hospital";
-        $row[11] = $row[11] eq "M" ? "Medicare" : "Medicare/Medicaid";
+        $row[8] = $row[8] eq "E" ? "EP" : "Hospital";
+        $row[12] = $row[12] eq "M" ? "Medicare" : "Medicare/Medicaid";
         my $last = pop @row;
+        $last = pop @row;
         print map{"$_\t"} @row;
         print "$last\n";
     }

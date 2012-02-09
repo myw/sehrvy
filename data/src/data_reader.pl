@@ -97,19 +97,22 @@ sub create_tables
               INNER JOIN Vendors ON Vendors.vendor_id = Products.vendor_id") or die "Cannot create view: " . $dbh->errstr ();
     
     $dbh->do ("CREATE VIEW Original AS
-              SELECT Vendors.vendor_name,
+              SELECT
+              Vendors.vendor_name,
               Products.product_name,
               Versions.version_name,
               Attestations.attestation_classification,
               Attestations.attestation_setting,
               Attestations.attestation_month,
+              Attestations.attestation_year,
               StateCodes.state_name,
               Attestations.provider_type,
               ProviderSpecialties.provider_specialty_name,
               Attestations.program_year,
               Attestations.payment_year,
               Attestations.program_type,
-              Attestations.attestation_gov_id
+              Attestations.attestation_gov_id,
+              Attestations.attestation_id
               FROM
               Attestations
               INNER JOIN Versions on Versions.version_id=Attestations.version_id
