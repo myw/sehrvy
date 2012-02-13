@@ -5,11 +5,14 @@ use warnings;
 
 use Switch;
 use JSON;
+use File::Spec;
 
 package Sehrvy::Server;
 use base qw(Net::Server::HTTP);
 
 our @valid_methods = ('GET', 'POST');
+
+our $ROOT_DIR = (File::Spec->splitpath(__FILE__))[1];
 
 sub process_http_request {
 	my $self = shift;
@@ -25,6 +28,8 @@ sub dispatch {
 
 		switch ($path_info) {
 			case m{^/test} { $self->test_form }
+			case m{^/js} { $self->serve('content' . $path_info, 'text/javascript')}
+			case m{^/map} { $self->serve('content/map.html')}
 			case m{^/query} { $self->test_query }
 
 			else { $self->err_unknown_path($path_info) }
@@ -38,6 +43,19 @@ sub content_type {
 	my $type = shift || 'text/html';
 
 	print "Content-type: $type\n\n";
+}
+
+sub serve {
+  my ($self, $file, $type) = @_;
+
+  content_type($type);
+
+  my $full_path = File::Spec->catfile($ROOT_DIR, $file);
+  open my $fh, '<', $full_path or return $self->err_unknown_path($file);
+
+  while (defined(my $line = <$fh>)) {
+    print $line;
+  }
 }
 
 sub test_form {
@@ -62,8 +80,19 @@ sub test_query {
 
 	content_type('application/json');
 	#print '[2, 3, 4, {"asdf": "boo", "jasks": "narf"}, ["3", 11, 14, 12.3, "doggy"]]';
-	print JSON::to_json([2, 3, 4, {"asdf" => "boo", "jasks" => "narf"}, ["3", 11, 14, 12.3, "doggy"]]);
-
+  #print JSON::to_json([2, 3, 4, {"asdf" => "boo", "jasks" => "narf"}, ["3", 11, 14, 12.3, "doggy"]]);
+  print JSON::to_json({
+    cols => [
+      {label => 'State', type => 'string'}, 
+      {label => 'Score', type => 'number'} 
+    ],
+    rows => [
+      {c => [{v => "US-TX"}, {v => 150}]},
+      {c => [{v => "US-MA"}, {v => 250}]},
+      {c => [{v => "US-MN"}, {v => 350}]},
+      {c => [{v => "US-WI"}, {v => 450}]}
+    ]
+  });
 }
 
 sub err_unknown_path {
@@ -82,4 +111,6 @@ sub err_unimplemented_method {
 
 	$self->send_501("Sehrvy does not support $request_method requests");
 }
+
+
 1;
