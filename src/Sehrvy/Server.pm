@@ -3,7 +3,7 @@
 use strict;
 use warnings;
 
-use Switch;
+#use Switch;
 use File::Spec;
 use JSON;
 use HTML::Template;
@@ -30,13 +30,12 @@ sub dispatch {
   # Only support valid accesses
   if (grep {$_ eq $request_method} @valid_methods) {
 
-    switch ($path_info) {
-      case m{^/js} { $self->serve('content' . $path_info, 'text/javascript')}
-      case m{^/map} { $self->serve('content/template/map.tmpl', undef, {name => 'Mappy'})}
-      case m{^/test} { $self->test_form }
-      case m{^/query} { $self->test_query }
-      case m{^/$} { $self->serve('content/static/index.html')}
-
+    for ($path_info) {
+      if(m{^/js}) { $self->serve('content' . $path_info, 'text/javascript')}
+      elsif(m{^/map}) { $self->serve('content/template/map.tmpl', undef, {name => 'Mappy'})}
+      elsif(m{^/test}) { $self->test_form }
+      elsif(m{^/query}) { $self->test_query }
+      elsif(m{^/$}) { $self->serve('content/static/index.html')}
       else { $self->err_unknown_path($path_info) }
     }
   } else {
