@@ -10,9 +10,12 @@ use File::Spec;
 package Sehrvy::Server;
 use base qw(Net::Server::HTTP);
 
+# Global Package Variables
 our @valid_methods = ('GET', 'POST');
-
 our $ROOT_DIR = (File::Spec->splitpath(__FILE__))[1];
+
+
+# Request Handling
 
 sub process_http_request {
   my $self = shift;
@@ -27,9 +30,9 @@ sub dispatch {
   if (grep {$_ eq $request_method} @valid_methods) {
 
     switch ($path_info) {
-      case m{^/test} { $self->test_form }
       case m{^/js} { $self->serve('content' . $path_info, 'text/javascript')}
       case m{^/map} { $self->serve('content/map.html')}
+      case m{^/test} { $self->test_form }
       case m{^/query} { $self->test_query }
 
       else { $self->err_unknown_path($path_info) }
@@ -37,12 +40,6 @@ sub dispatch {
   } else {
     $self->err_unimplemented_method($request_method);
   }
-}
-
-sub content_type {
-  my $type = shift || 'text/html';
-
-  print "Content-type: $type\n\n";
 }
 
 sub serve {
@@ -57,6 +54,38 @@ sub serve {
     print $line;
   }
 }
+
+
+# Content Delivery Utilities
+
+sub content_type {
+  my $type = shift || 'text/html';
+
+  print "Content-type: $type\n\n";
+}
+
+
+# Errors
+
+sub err_unknown_path {
+  my $self = shift;
+  my $path = shift;
+
+  $self->send_status(404, 'Not Found');
+  content_type;
+  print "<h1>404 - Not Found</h1>\n";
+  print "<p>The path <code>$path</code> is unavailable.</p>\n";
+}
+
+sub err_unimplemented_method {
+  my $self = shift;
+  my $request_method = shift;
+
+  $self->send_501("Sehrvy does not support $request_method requests");
+}
+
+
+# Testing functions
 
 sub test_form {
   my $self = shift;
@@ -94,23 +123,4 @@ sub test_query {
     ]
   });
 }
-
-sub err_unknown_path {
-  my $self = shift;
-  my $path = shift;
-
-  $self->send_status(404, 'Not Found');
-  content_type;
-  print "<h1>404 - Not Found</h1>\n";
-  print "<p>The path <code>$path</code> is unavailable.</p>\n";
-}
-
-sub err_unimplemented_method {
-  my $self = shift;
-  my $request_method = shift;
-
-  $self->send_501("Sehrvy does not support $request_method requests");
-}
-
-
 1;
