@@ -17,7 +17,8 @@ Requires
 
  * `DBD::mysql`
  * `Net::Sever::HTTP`
- * `JSON` (either `JSON:XS` or `JSON:PP`)
+ * `JSON` (either `JSON::XS` or `JSON::PP`)
+ * `HTML::Template`
 
 
 Try it out

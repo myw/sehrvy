@@ -4,8 +4,9 @@ use strict;
 use warnings;
 
 use Switch;
-use JSON;
 use File::Spec;
+use JSON;
+use HTML::Template;
 
 package Sehrvy::Server;
 use base qw(Net::Server::HTTP);
@@ -31,7 +32,7 @@ sub dispatch {
 
     switch ($path_info) {
       case m{^/js} { $self->serve('content' . $path_info, 'text/javascript')}
-      case m{^/map} { $self->serve('content/map.html')}
+      case m{^/map} { $self->serve('content/template/map.tmpl', undef, {name => 'Mappy'})}
       case m{^/test} { $self->test_form }
       case m{^/query} { $self->test_query }
 
@@ -43,15 +44,36 @@ sub dispatch {
 }
 
 sub serve {
-  my ($self, $file, $type) = @_;
+  my ($self, $file, $type, $templ_params) = @_;
 
   content_type($type);
 
   my $full_path = File::Spec->catfile($ROOT_DIR, $file);
-  open my $fh, '<', $full_path or return $self->err_unknown_path($file);
 
-  while (defined(my $line = <$fh>)) {
-    print $line;
+  # Templates get generated, regular files get served straight up
+
+  # Templates are defined by the extension .tmpl
+  if ($file =~ /\.tmpl$/) {
+
+    # Load the template
+    my $templ = HTML::Template->new(
+      filename => $full_path,
+      cache    => 1,
+      utf8     => 1
+    );
+
+    # Apply the supplied parameters
+    $templ->param($templ_params);
+
+    # Print to stdout (i.e. the client)
+    print $templ->output;
+
+  } else {
+    open my $fh, '<', $full_path or return $self->err_unknown_path($file);
+
+    while (defined(my $line = <$fh>)) {
+      print $line;
+    }
   }
 }
 
