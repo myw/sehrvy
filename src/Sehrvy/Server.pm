@@ -35,6 +35,7 @@ sub dispatch {
       case m{^/map} { $self->serve('content/template/map.tmpl', undef, {name => 'Mappy'})}
       case m{^/test} { $self->test_form }
       case m{^/query} { $self->test_query }
+      case m{^/$} { $self->serve('content/static/index.html')}
 
       else { $self->err_unknown_path($path_info) }
     }
