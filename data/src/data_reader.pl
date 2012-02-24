@@ -2,8 +2,9 @@
 use strict;
 use warnings;
 use DBI;
+use 5.008;
 
-my $dbh = DBI->connect("dbi:mysql:sehrvy") or die "Cannot connect: $DBI::errstr";
+my $dbh = DBI->connect("dbi:mysql:sehrvy",'sehrvy_client') or die "Cannot connect: $DBI::errstr";
 
 delete_tables($dbh);
 create_tables($dbh);
