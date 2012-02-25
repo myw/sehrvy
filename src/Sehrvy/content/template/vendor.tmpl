@@ -6,10 +6,11 @@
       google.load('jquery', '1.7.1', {'uncompressed': true}); 
       google.load('visualization', '1', {'packages': ['geochart']});
     </script>
+    <script type='text/javascript' src='/js/vendor.js'></script>
     <script type='text/javascript' src='/js/map.js'></script>
     <script type='text/javascript'>
       $(function () {
-        var theMap = Map('#map', 'Score', '/query');
+        addText('test string');
       });
     </script>
   </head>
@@ -17,8 +18,14 @@
   <body>
 
     <h1><TMPL_VAR NAME="name"></h1>
-    <div id="products"></div>
+    <div id="products">
+      <table>
+	<thead>
+	  <th>State</th><th>Value</th>
+	</thead>
+	<tbody id="product_table_body"></tbody>
+      </table>
+    </div>
     <div id="map" style="width: 556px;"></div>
-
   </body>
 </html>
