@@ -12,7 +12,9 @@ use DBI;
 use 5.008;
 
 MAIN: {
-	my $dbh = DBI->connect("dbi:mysql:sehrvy") or die "Cannot connect: $DBI::errstr";
+  my $dbh = DBI->connect("dbi:mysql:sehrvy") or die "Cannot connect: $DBI::errstr";
 
-	$dbh->disconnect;
+  $dbh->disconnect;
 }
+
+# vi:sw=2 ts=2 sts=2 et:

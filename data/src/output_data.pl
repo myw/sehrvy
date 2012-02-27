@@ -18,122 +18,124 @@ $dbh->disconnect;
 
 # Output a list of vendors and the number of different product versions
 # associated with each vendor
-sub count_products
-{
-    my $dbh = shift;
-    my $sth = $dbh->prepare("SELECT vendor_name , COUNT(version_id)
-                            FROM ProductVersions
-                            GROUP BY vendor_id
-                            ORDER BY count(version_id) DESC");
-    $sth->execute();
-    
-    while (my @row = $sth->fetchrow_array())
-    {
-        print "$row[0] - $row[1]\n";
-    }
-    $sth->finish;
+sub count_products {
+
+  my $dbh = shift;
+  my $sth = $dbh->prepare("SELECT vendor_name , COUNT(version_id)
+                           FROM ProductVersions
+                           GROUP BY vendor_id
+                           ORDER BY count(version_id) DESC");
+  $sth->execute();
+
+  while (my @row = $sth->fetchrow_array()) {
+    print "$row[0] - $row[1]\n";
+  }
+  $sth->finish;
 }
 
 
 # Print the contents of the attestations table
-sub print_attestations
-{
-    my $dbh = shift;
-    my $sth = $dbh->prepare("SELECT * FROM Attestations");
-    $sth->execute();
-    while(my @row = $sth->fetchrow_array)
-    {
-        foreach (@row) {$_ = 'NULL' unless defined};
-        print "@row\n";
-    }
+sub print_attestations {
+
+  my $dbh = shift;
+  my $sth = $dbh->prepare("SELECT * FROM Attestations");
+  $sth->execute();
+
+  while(my @row = $sth->fetchrow_array) {
+    foreach (@row) {$_ = 'NULL' unless defined};
+    print "@row\n";
+  }
 }
 
 # Print a list of all specialties in the database
-sub print_specialties
-{
-    my $dbh = shift;
-    my $sth = $dbh->prepare("SELECT * FROM ProviderSpecialties ORDER BY provider_specialty_name");
-    $sth->execute();
-    while(my @row = $sth->fetchrow_array)
-    {
-        print "@row\n";
-    }
+sub print_specialties {
+  my $dbh = shift;
+  my $sth = $dbh->prepare("SELECT * FROM ProviderSpecialties ORDER BY provider_specialty_name");
+  $sth->execute();
+
+  while(my @row = $sth->fetchrow_array) {
+    print "@row\n";
+  }
 }
 
 
 # Print all products that match a certain text search condition
-sub query_test
-{
-    my $dbh = shift;
-    my $sth = $dbh->prepare("SELECT product_id FROM Products WHERE product_name LIKE '%at%'");
-    $sth->execute();
-    my $results = $sth->fetchall_arrayref();
+sub query_test {
 
-    $sth = $dbh->prepare("SELECT vendor_name , product_name , version_name FROM ProductVersions WHERE product_id = ?");
-    foreach (@$results)
-    {
-        $sth->execute(@$_[0]);
-        while (my @row = $sth->fetchrow_array)
-        {
-            print map{"$_;"} @row;
-            print "\n";
-        }
-        $sth->finish;
+  my $dbh = shift;
+  my $sth = $dbh->prepare("SELECT product_id FROM Products WHERE product_name LIKE '%at%'");
+  $sth->execute();
+  my $results = $sth->fetchall_arrayref();
+
+  $sth = $dbh->prepare("SELECT vendor_name , product_name , version_name FROM ProductVersions WHERE product_id = ?");
+
+  foreach (@$results) {
+
+    $sth->execute(@$_[0]);
+
+    while (my @row = $sth->fetchrow_array) {
+      print map{"$_;"} @row;
+      print "\n";
     }
+
+    $sth->finish;
+  }
 }
 
 # Output the data in a similar format to the input data
-sub print_original
-{
-    my $dbh = shift;
-    my $sth = $dbh->prepare("SELECT * FROM Original ORDER BY attestation_id");
-    $sth->execute();
-    while(my @row = $sth->fetchrow_array)
-    {
-        foreach (@row) {$_ = '.' unless defined};
-        $row[3] = $row[3] eq "C" ? "Complete EHR" : "Modular EHR";
-        $row[4] = $row[4] eq "A" ? "Ambulatory" : "Inpatient";
-        $row[8] = $row[8] eq "E" ? "EP" : "Hospital";
-        $row[12] = $row[12] eq "M" ? "Medicare" : "Medicare/Medicaid";
-        my $last = pop @row;
-        $last = pop @row;
-        print map{"$_\t"} @row;
-        print "$last\n";
-    }
+sub print_original {
+
+  my $dbh = shift;
+  my $sth = $dbh->prepare("SELECT * FROM Original ORDER BY attestation_id");
+  $sth->execute();
+
+  while(my @row = $sth->fetchrow_array) {
+
+    foreach (@row) {$_ = '.' unless defined};
+
+    $row[3] = $row[3] eq "C" ? "Complete EHR" : "Modular EHR";
+    $row[4] = $row[4] eq "A" ? "Ambulatory" : "Inpatient";
+    $row[8] = $row[8] eq "E" ? "EP" : "Hospital";
+    $row[12] = $row[12] eq "M" ? "Medicare" : "Medicare/Medicaid";
+    my $last = pop @row;
+    $last = pop @row;
+    print map{"$_\t"} @row;
+    print "$last\n";
+
+  }
 }
 
 # Output a hierarchical view of all vendors, products, and version
-sub tree_output
-{
+sub tree_output {
+
     my $dbh = shift;
     my $sth = $dbh->prepare("SELECT vendor_id , vendor_name FROM Vendors");
     $sth->execute();
     my $vendor_list = $sth->fetchall_arrayref();
-    
+
     $sth = $dbh->prepare("SELECT product_id , product_name FROM Products WHERE vendor_id = ?");
-    foreach my $temp (@$vendor_list)
-    {
-        $sth->execute($$temp[0]);
-        $$temp[0]=$sth->fetchall_arrayref();
+    foreach my $temp (@$vendor_list) {
+      $sth->execute($$temp[0]);
+      $$temp[0]=$sth->fetchall_arrayref();
     }
 
     $sth = $dbh->prepare("SELECT version_name FROM Versions WHERE product_id = ?");
-    foreach my $outer(@$vendor_list)
-    {
-        print "$$outer[1]\n";
-        my @continue = $$outer[0];
-        foreach my $inner(@continue)
-        {
-           foreach my $inner2(@$inner)
-           {
-                #print "$$inner2[0]\n";
-                print "\t$$inner2[1]\n";
-                $sth->execute($$inner2[0]);
-                while (my @qq = $sth->fetchrow_array)
-                {
-                    print "\t\t@qq\n";
-                }
-           }
+    foreach my $outer(@$vendor_list) {
+      print "$$outer[1]\n";
+      my @continue = $$outer[0];
+
+      foreach my $inner(@continue) {
+        foreach my $inner2(@$inner) {
+
+          #print "$$inner2[0]\n";
+          print "\t$$inner2[1]\n";
+          $sth->execute($$inner2[0]);
+          while (my @qq = $sth->fetchrow_array) {
+            print "\t\t@qq\n";
+          }
         }
+      }
     }
 }
+
+# vi:sw=2 ts=2 sts=2 et:
