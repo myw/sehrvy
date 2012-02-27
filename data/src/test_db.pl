@@ -9,7 +9,7 @@
 use strict;
 use warnings;
 use DBI;
-
+use 5.008;
 
 MAIN: {
 	my $dbh = DBI->connect("dbi:mysql:sehrvy") or die "Cannot connect: $DBI::errstr";

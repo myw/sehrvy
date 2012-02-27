@@ -1,5 +1,3 @@
-# The main server
-
 use strict;
 use warnings;
 
@@ -8,6 +6,7 @@ use DB;
 use File::Spec;
 use JSON;
 use HTML::Template;
+use 5.008;
 
 package Sehrvy::Server;
 use base qw(Net::Server::HTTP);
@@ -36,6 +35,7 @@ sub dispatch {
     for ($path_info) {
       if(m{^/js}) { $self->serve('content' . $path_info, 'text/javascript')}
       elsif(m{^/map}) { $self->serve('content/template/map.tmpl', undef, {name => 'Mappy'})}
+      elsif(m{^/vendor/(.*)}) { $self->serve('content/template/vendor.tmpl', undef, {name => $1})}
       elsif(m{^/test}) { $self->test_form }
       elsif(m{^/query}) { $self->test_query }
       elsif(m{^/$}) { $self->serve('content/static/index.html')}
