@@ -5,7 +5,7 @@ use DBI;
 use 5.008;
 
 MAIN: {
-  my $dbh = DBI->connect("dbi:mysql:sehrvy",'sehrvy_client') or die "Cannot connect: $DBI::errstr";
+  my $dbh = DBI->connect('dbi:mysql:sehrvy','sehrvy_admin') or die "Cannot connect: $DBI::errstr";
 
   delete_tables($dbh);
   create_tables($dbh);
@@ -253,7 +253,7 @@ sub read_data
     cached_add($dbh, \@tokenized_line,\@lines);
   }
 
-  add_all(\@lines);
+  add_all($dbh, \@lines);
 }
 
 sub cached_add {
