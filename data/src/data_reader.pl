@@ -177,6 +177,8 @@ sub read_data {
 
   my $dbh = shift;
   my %cached_vendors;
+  my %used_vendor_slugs;
+  my %cached_vendor_names; # Use only the names to cache slug calculation
   my %cached_products;
   my %cached_versions;
   my %cached_specialties;
@@ -208,7 +210,7 @@ sub read_data {
     # Get vendor ID (adding vendor to Vendor table if necessary)
     my @handles = ($get_vendor,$add_vendor);
     my @args = (shift @tokenized_line);
-    unshift @args, slugify($args[0]); # slugify vendor name and put it in front
+    unshift @args, slugify($args[0], \%cached_vendor_names, \%used_vendor_slugs); # slugify vendor name and put it in front
     my $vendor_id = add_if_necessary(\@handles,\@args,\%cached_vendors);
 
     # Get product ID (adding product to Product table if necessary)
@@ -321,39 +323,51 @@ sub add_if_necessary {
 our %slugs;
 
 sub slugify {
-  my $string = shift;
+  my ($string, $cache, $used_slugs) = @_;
+  # track both previously calculated slugifications (cache), organized
+  # by string, and previously used slugs, organized by slug
 
-  my $slug = lc $string;
+  return $cache->{$string} if $cache->{$string};
+
+  my $new_string = lc $string;
 
   # Remove parentheticals
-  $slug =~ s/\(.*\)//g;
+  $new_string =~ s/\(.*\)//g;
 
-  # Remove spaced-out dashes
-  $slug =~ s/ - /-/g;
+  # Remove non-hyphen dashes
+  $new_string =~ s/\s+-\s+/ /g;
 
-  # Kill anything that we can't easily parse
-  $slug =~ s/[^a-z -]//g;
+  # Turn anything that we can't easily parse into a single space
+  $new_string =~ s/[^a-z0-9-]/ /g;
+  $new_string =~ s/\s+/ /g;
 
-  # Kill inc, llc or pc tags
-  $slug =~ s/\b(llc|inc)\b//g;
-  $slug =~ s/\b(ltd|pc)$//g;
+  # Trim edge space
+  $new_string =~ s/^\s+|\s+$//;
 
-  # Kill trailing or starting spaces
-  $slug =~ s/^\s+|\s+$//;
+  # Keep pushing words onto sluglist until we have a unique slug
+  my @words = split /\s/, $new_string;
+  local $" = '-'; # ('foo', 'bar') -> 'foo-bar'
+  my @sluglist;
+  my $slug;
 
-  # Kill terminal buzzwords
-  $slug =~ s/\s+(corporation|industries|systems|services|healthcare|usa)$//g;
-  
-  # Convert legit spaces to dashes
-  $slug =~ s/ /-/g;
+  do {
+    # Add on the next word
+    push(@sluglist, shift @words);
+
+    $slug = "@sluglist";
+
+  } while(defined($used_slugs->{$slug}));
+
+  $used_slugs->{$slug} = 1;
+  $cache->{$string} = $slug;
 
   $slugs{$slug}{$string} = 1;
 
   return $slug;
 }
 
-while (my ($key, $value) = each %slugs) {
-  my @strings = join ', ', keys %$value;
+for my $key (sort keys %slugs) {
+  my @strings = join ' | ', keys %{$slugs{$key}};
   print "$key => @strings\n";
 }
 
