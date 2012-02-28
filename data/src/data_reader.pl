@@ -18,16 +18,16 @@ MAIN: {
 # Delete all tables in the database
 sub delete_tables {
   my $dbh = shift;
-  $dbh->do ("DROP VIEW IF EXISTS Everything");
-  $dbh->do ("DROP VIEW IF EXISTS Original");
-  $dbh->do ("DROP VIEW IF EXISTS ProductVersions");
-  $dbh->do ("DROP VIEW IF EXISTS VendorProducts");
-  $dbh->do ("DROP TABLE IF EXISTS Attestations");
-  $dbh->do ("DROP TABLE IF EXISTS ProviderSpecialties");
-  $dbh->do ("DROP TABLE IF EXISTS Versions");
-  $dbh->do ("DROP TABLE IF EXISTS Products");
-  $dbh->do ("DROP TABLE IF EXISTS Vendors");
-  $dbh->do ("DROP TABLE IF EXISTS StateCodes");
+  $dbh->do("DROP VIEW IF EXISTS Everything");
+  $dbh->do("DROP VIEW IF EXISTS Original");
+  $dbh->do("DROP VIEW IF EXISTS ProductVersions");
+  $dbh->do("DROP VIEW IF EXISTS VendorProducts");
+  $dbh->do("DROP TABLE IF EXISTS Attestations");
+  $dbh->do("DROP TABLE IF EXISTS ProviderSpecialties");
+  $dbh->do("DROP TABLE IF EXISTS Versions");
+  $dbh->do("DROP TABLE IF EXISTS Products");
+  $dbh->do("DROP TABLE IF EXISTS Vendors");
+  $dbh->do("DROP TABLE IF EXISTS StateCodes");
 }
 
 
@@ -35,119 +35,119 @@ sub delete_tables {
 sub create_tables {
   my $dbh = shift;
 
-  $dbh->do ("CREATE TABLE StateCodes(
-            state_code CHAR(2) PRIMARY KEY,
-            state_name VARCHAR(40) NOT NULL)");
+  $dbh->do("CREATE TABLE StateCodes(
+           state_code CHAR(2) PRIMARY KEY,
+           state_name VARCHAR(40) NOT NULL)");
 
-  $dbh->do ("CREATE TABLE Vendors(
-            vendor_id INT UNSIGNED PRIMARY KEY AUTO_INCREMENT,
-            vendor_name VARCHAR(100) NOT NULL,
-            UNIQUE KEY no_duplicate_vendors (vendor_name)
-            )") or die "Cannot create table: " . $dbh->errstr ();
+  $dbh->do("CREATE TABLE Vendors(
+           vendor_id INT UNSIGNED PRIMARY KEY AUTO_INCREMENT,
+           vendor_name VARCHAR(100) NOT NULL,
+           UNIQUE KEY no_duplicate_vendors (vendor_name)
+           )") or die "Cannot create table: " . $dbh->errstr ();
 
-  $dbh->do ("CREATE TABLE Products(
-            product_id INT UNSIGNED PRIMARY KEY AUTO_INCREMENT,
-            vendor_id INT UNSIGNED NOT NULL,
-            product_name VARCHAR(100) NOT NULL,
-            FOREIGN KEY(vendor_id) REFERENCES Vendors(vendor_id),
-            UNIQUE KEY no_duplicate_products (vendor_id,product_name)
-            )") or die "Cannot create table: " . $dbh->errstr ();
+  $dbh->do("CREATE TABLE Products(
+           product_id INT UNSIGNED PRIMARY KEY AUTO_INCREMENT,
+           vendor_id INT UNSIGNED NOT NULL,
+           product_name VARCHAR(100) NOT NULL,
+           FOREIGN KEY(vendor_id) REFERENCES Vendors(vendor_id),
+           UNIQUE KEY no_duplicate_products (vendor_id,product_name)
+           )") or die "Cannot create table: " . $dbh->errstr ();
 
-  $dbh->do ("CREATE TABLE Versions(
-            version_id INT UNSIGNED PRIMARY KEY AUTO_INCREMENT,
-            product_id INT UNSIGNED NOT NULL,
-            version_name VARCHAR(100) NOT NULL,
-            FOREIGN KEY(product_id) REFERENCES Products(product_id),
-            UNIQUE KEY no_duplicate_versions (product_id,version_name)
-            )") or die "Cannot create table: " . $dbh->errstr ();
+  $dbh->do("CREATE TABLE Versions(
+           version_id INT UNSIGNED PRIMARY KEY AUTO_INCREMENT,
+           product_id INT UNSIGNED NOT NULL,
+           version_name VARCHAR(100) NOT NULL,
+           FOREIGN KEY(product_id) REFERENCES Products(product_id),
+           UNIQUE KEY no_duplicate_versions (product_id,version_name)
+           )") or die "Cannot create table: " . $dbh->errstr ();
 
-  $dbh->do ("CREATE TABLE ProviderSpecialties(
-            provider_specialty_id INT UNSIGNED PRIMARY KEY AUTO_INCREMENT,
-            provider_specialty_name VARCHAR(100) NOT NULL)");
+  $dbh->do("CREATE TABLE ProviderSpecialties(
+           provider_specialty_id INT UNSIGNED PRIMARY KEY AUTO_INCREMENT,
+           provider_specialty_name VARCHAR(100) NOT NULL)");
 
-  $dbh->do ("CREATE TABLE Attestations(
-            attestation_id INT UNSIGNED PRIMARY KEY AUTO_INCREMENT,
-            version_id INT UNSIGNED NOT NULL,
-            provider_specialty_id INT UNSIGNED NOT NULL,
-            attestation_classification CHAR(1) NOT NULL,
-            attestation_setting CHAR(1) NOT NULL,
-            provider_state CHAR(2) NOT NULL,
-            provider_type CHAR(1) NOT NULL,
-            attestation_month SMALLINT UNSIGNED NOT NULL,
-            attestation_year INTEGER NOT NULL,
-            program_year INT UNSIGNED,
-            payment_year INT UNSIGNED,
-            program_type CHAR(1) NOT NULL,
-            attestation_gov_id INT UNSIGNED NOT NULL,
-            FOREIGN KEY (version_id) REFERENCES Versions(version_id),
-            FOREIGN KEY (provider_specialty_id) REFERENCES ProviderSpecialties(provider_specialty_id),
-            FOREIGN KEY (provider_state) REFERENCES StateCodes(state_code)
-            )") or die "Cannot create table: " . $dbh->errstr ();
+  $dbh->do("CREATE TABLE Attestations(
+           attestation_id INT UNSIGNED PRIMARY KEY AUTO_INCREMENT,
+           version_id INT UNSIGNED NOT NULL,
+           provider_specialty_id INT UNSIGNED NOT NULL,
+           attestation_classification CHAR(1) NOT NULL,
+           attestation_setting CHAR(1) NOT NULL,
+           provider_state CHAR(2) NOT NULL,
+           provider_type CHAR(1) NOT NULL,
+           attestation_month SMALLINT UNSIGNED NOT NULL,
+           attestation_year INTEGER NOT NULL,
+           program_year INT UNSIGNED,
+           payment_year INT UNSIGNED,
+           program_type CHAR(1) NOT NULL,
+           attestation_gov_id INT UNSIGNED NOT NULL,
+           FOREIGN KEY (version_id) REFERENCES Versions(version_id),
+           FOREIGN KEY (provider_specialty_id) REFERENCES ProviderSpecialties(provider_specialty_id),
+           FOREIGN KEY (provider_state) REFERENCES StateCodes(state_code)
+           )") or die "Cannot create table: " . $dbh->errstr ();
 
-  $dbh->do ("CREATE VIEW VendorProducts AS
-            SELECT Vendors.vendor_name , Products.product_name
-            FROM Vendors INNER JOIN Products ON Vendors.vendor_id=Products.vendor_id") or die "Cannot create view: " . $dbh->errstr ();
-  $dbh->do ("CREATE VIEW ProductVersions AS
-            SELECT Vendors.vendor_id , Vendors.vendor_name ,
-            Products.product_id , Products.product_name ,
-            Versions.version_id , Versions.version_name
-            FROM
-            Versions
-            INNER JOIN Products ON Versions.product_id=Products.product_id
-            INNER JOIN Vendors ON Vendors.vendor_id = Products.vendor_id") or die "Cannot create view: " . $dbh->errstr ();
+  $dbh->do("CREATE VIEW VendorProducts AS
+           SELECT Vendors.vendor_name , Products.product_name
+           FROM Vendors INNER JOIN Products ON Vendors.vendor_id=Products.vendor_id") or die "Cannot create view: " . $dbh->errstr ();
+  $dbh->do("CREATE VIEW ProductVersions AS
+           SELECT Vendors.vendor_id , Vendors.vendor_name ,
+           Products.product_id , Products.product_name ,
+           Versions.version_id , Versions.version_name
+           FROM
+           Versions
+           INNER JOIN Products ON Versions.product_id=Products.product_id
+           INNER JOIN Vendors ON Vendors.vendor_id = Products.vendor_id") or die "Cannot create view: " . $dbh->errstr ();
 
-  $dbh->do ("CREATE VIEW Original AS
-            SELECT
-            Vendors.vendor_name,
-            Products.product_name,
-            Versions.version_name,
-            Attestations.attestation_classification,
-            Attestations.attestation_setting,
-            Attestations.attestation_month,
-            Attestations.attestation_year,
-            StateCodes.state_name,
-            Attestations.provider_type,
-            ProviderSpecialties.provider_specialty_name,
-            Attestations.program_year,
-            Attestations.payment_year,
-            Attestations.program_type,
-            Attestations.attestation_gov_id,
-            Attestations.attestation_id
-            FROM
-            Attestations
-            INNER JOIN Versions on Versions.version_id=Attestations.version_id
-            INNER JOIN Products ON Versions.product_id=Products.product_id
-            INNER JOIN Vendors ON Vendors.vendor_id=Products.vendor_id
-            INNER JOIN ProviderSpecialties ON Attestations.provider_specialty_id = ProviderSpecialties.provider_specialty_id
-            INNER JOIN StateCodes ON Attestations.provider_state = StateCodes.state_code");
+  $dbh->do("CREATE VIEW Original AS
+           SELECT
+           Vendors.vendor_name,
+           Products.product_name,
+           Versions.version_name,
+           Attestations.attestation_classification,
+           Attestations.attestation_setting,
+           Attestations.attestation_month,
+           Attestations.attestation_year,
+           StateCodes.state_name,
+           Attestations.provider_type,
+           ProviderSpecialties.provider_specialty_name,
+           Attestations.program_year,
+           Attestations.payment_year,
+           Attestations.program_type,
+           Attestations.attestation_gov_id,
+           Attestations.attestation_id
+           FROM
+           Attestations
+           INNER JOIN Versions on Versions.version_id=Attestations.version_id
+           INNER JOIN Products ON Versions.product_id=Products.product_id
+           INNER JOIN Vendors ON Vendors.vendor_id=Products.vendor_id
+           INNER JOIN ProviderSpecialties ON Attestations.provider_specialty_id = ProviderSpecialties.provider_specialty_id
+           INNER JOIN StateCodes ON Attestations.provider_state = StateCodes.state_code");
 
-  $dbh->do ("CREATE VIEW Everything AS
-            SELECT
-            Vendors.vendor_id,
-            Products.product_id,
-            Versions.version_id,
-            Attestations.provider_specialty_id,
-            Attestations.provider_state,
-            Vendors.vendor_name,
-            Products.product_name,
-            Versions.version_name,
-            Attestations.attestation_classification,
-            Attestations.attestation_setting,
-            Attestations.attestation_month,
-            StateCodes.state_name,
-            Attestations.provider_type,
-            ProviderSpecialties.provider_specialty_name,
-            Attestations.program_year,
-            Attestations.payment_year,
-            Attestations.program_type,
-            Attestations.attestation_gov_id
-            FROM
-            Attestations
-            INNER JOIN Versions on Versions.version_id=Attestations.version_id
-            INNER JOIN Products ON Versions.product_id=Products.product_id
-            INNER JOIN Vendors ON Vendors.vendor_id=Products.vendor_id
-            INNER JOIN ProviderSpecialties ON Attestations.provider_specialty_id = ProviderSpecialties.provider_specialty_id
-            INNER JOIN StateCodes ON Attestations.provider_state = StateCodes.state_code");
+  $dbh->do("CREATE VIEW Everything AS
+           SELECT
+           Vendors.vendor_id,
+           Products.product_id,
+           Versions.version_id,
+           Attestations.provider_specialty_id,
+           Attestations.provider_state,
+           Vendors.vendor_name,
+           Products.product_name,
+           Versions.version_name,
+           Attestations.attestation_classification,
+           Attestations.attestation_setting,
+           Attestations.attestation_month,
+           StateCodes.state_name,
+           Attestations.provider_type,
+           ProviderSpecialties.provider_specialty_name,
+           Attestations.program_year,
+           Attestations.payment_year,
+           Attestations.program_type,
+           Attestations.attestation_gov_id
+           FROM
+           Attestations
+           INNER JOIN Versions on Versions.version_id=Attestations.version_id
+           INNER JOIN Products ON Versions.product_id=Products.product_id
+           INNER JOIN Vendors ON Vendors.vendor_id=Products.vendor_id
+           INNER JOIN ProviderSpecialties ON Attestations.provider_specialty_id = ProviderSpecialties.provider_specialty_id
+           INNER JOIN StateCodes ON Attestations.provider_state = StateCodes.state_code");
 }
 
 
