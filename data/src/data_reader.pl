@@ -320,8 +320,6 @@ sub add_if_necessary {
     return $row[0];
 }
 
-our %slugs;
-
 sub slugify {
   my ($string, $cache, $used_slugs) = @_;
   # track both previously calculated slugifications (cache), organized
@@ -358,18 +356,11 @@ sub slugify {
 
   } while(defined($used_slugs->{$slug}));
 
+  # Update the cache and used slugs hash
   $used_slugs->{$slug} = 1;
   $cache->{$string} = $slug;
 
-  $slugs{$slug}{$string} = 1;
-
   return $slug;
 }
-
-for my $key (sort keys %slugs) {
-  my @strings = join ' | ', keys %{$slugs{$key}};
-  print "$key => @strings\n";
-}
-
 
 # vi:sw=2 ts=2 sts=2 et:
