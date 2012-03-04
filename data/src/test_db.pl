@@ -12,7 +12,13 @@ use DBI;
 use 5.008;
 
 MAIN: {
-	my $dbh = DBI->connect("dbi:mysql:sehrvy") or die "Cannot connect: $DBI::errstr";
+  my $dbh;
 
-	$dbh->disconnect;
+  $dbh = DBI->connect('dbi:mysql:sehrvy', 'sehrvy_client') or die "Cannot connect as sehrvy_client: $DBI::errstr";
+  $dbh->disconnect;
+
+  $dbh = DBI->connect('dbi:mysql:sehrvy', 'sehrvy_admin') or die "Cannot connect as sehrvy_admin: $DBI::errstr";
+  $dbh->disconnect;
 }
+
+# vi:sw=2 ts=2 sts=2 et:

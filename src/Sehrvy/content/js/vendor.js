@@ -1,5 +1,6 @@
 // Vendor page code
 (function () {
+
     window.addText = function() {
 
 	var json_object = $.parseJSON(

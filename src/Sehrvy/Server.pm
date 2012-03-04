@@ -1,5 +1,8 @@
 use strict;
 use warnings;
+
+use DB;
+
 use File::Spec;
 use JSON;
 use HTML::Template;
@@ -11,6 +14,8 @@ use base qw(Net::Server::HTTP);
 # Global Package Variables
 our @valid_methods = ('GET', 'POST');
 our $ROOT_DIR = (File::Spec->splitpath(__FILE__))[1];
+
+our $db = DB->new;
 
 
 # Request Handling
@@ -144,6 +149,7 @@ sub test_query {
     ]
   });
 }
+
 1;
 
 # vi:sw=2 ts=2 sts=2 et:
