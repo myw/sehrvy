@@ -6,3 +6,5 @@ use 5.008;
 use Sehrvy::Server;
 
 Sehrvy::Server->run(port => 8080);
+
+# vi:sw=2 ts=2 sts=2 et:

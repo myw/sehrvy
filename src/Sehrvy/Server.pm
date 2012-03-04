@@ -29,6 +29,7 @@ sub dispatch {
 
     for ($path_info) {
       if(m{^/js}) { $self->serve('content' . $path_info, 'text/javascript')}
+      elsif(m{^/css}) { $self->serve('content' . $path_info, 'text/css')} #TODO: check css MIME type
       elsif(m{^/map}) { $self->serve('content/template/map.tmpl', undef, {name => 'Mappy'})}
       elsif(m{^/vendor/(.*)}) { $self->serve('content/template/vendor.tmpl', undef, {name => $1})}
       elsif(m{^/test}) { $self->test_form }
@@ -144,3 +145,5 @@ sub test_query {
   });
 }
 1;
+
+# vi:sw=2 ts=2 sts=2 et:
