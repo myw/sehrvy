@@ -48,8 +48,9 @@ sub product_name {
 sub vendor_name {
   my ($self, $slug) = @_;
 
-  $self->{product_name}->execute($slug);
-  return $self->{vendor_name}->fetchrow_arrayref->[0];
+  $self->{vendor_name}->execute($slug);
+  my $result_ref = $self->{vendor_name}->fetchrow_arrayref;
+  return defined($result_ref) ? $result_ref->[0] : 0;
 }
 
 1;
