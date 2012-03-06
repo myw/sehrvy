@@ -1,7 +1,7 @@
 use strict;
 use warnings;
 
-use DB;
+use Sehrvy::DB;
 
 use File::Spec;
 use JSON;
@@ -15,28 +15,26 @@ use base qw(Net::Server::HTTP);
 our @valid_methods = ('GET', 'POST');
 our $ROOT_DIR = (File::Spec->splitpath(__FILE__))[1];
 
-our $db = DB->new;
-
-
 # Request Handling
 
 sub process_http_request {
   my $self = shift;
 
-  $self->dispatch($ENV{REQUEST_METHOD}, $ENV{PATH_INFO}, $ENV{QUERY_STRING});
+  my $db = Sehrvy::DB->new;
+  $self->dispatch($ENV{REQUEST_METHOD}, $ENV{PATH_INFO}, $ENV{QUERY_STRING},$db);
 }
 
 sub dispatch {
-  my ($self, $request_method, $path_info, $query_string) = @_;
+  my ($self, $request_method, $path_info, $query_string,$db) = @_;
 
   # Only support valid accesses
   if (grep {$_ eq $request_method} @valid_methods) {
 
     for ($path_info) {
       if(m{^/js}) { $self->serve('content' . $path_info, 'text/javascript')}
-      elsif(m{^/css}) { $self->serve('content' . $path_info, 'text/css')} #TODO: check css MIME type
+      elsif(m{^/css}) { $self->serve('content' . $path_info, 'text/css')}
       elsif(m{^/map}) { $self->serve('content/template/map.tmpl', undef, {name => 'Mappy'})}
-      elsif(m{^/vendor/(.*)}) { $self->serve('content/template/vendor.tmpl', undef, {name => $1})}
+      elsif(m{^/vendor/(.*)}) { $self->serve_vendor($1,$db)}
       elsif(m{^/test}) { $self->test_form }
       elsif(m{^/query}) { $self->test_query }
       elsif(m{^/$}) { $self->serve('content/static/index.html')}
@@ -44,6 +42,19 @@ sub dispatch {
     }
   } else {
     $self->err_unimplemented_method($request_method);
+  }
+}
+
+sub serve_vendor{
+  my ($self, $slug, $db) = @_;
+  #content_type('text/plain');
+  #print $file . "||\n";
+  #print $db->vendor_name($file) . "||\n";
+  my $name = $db->vendor_name($slug);
+  if($name){ 
+    $self->serve('content/template/vendor.tmpl',undef,{slug=>$slug,name=>$name});
+  }else{
+    $self->err_unknown_path('vendor/'.$slug);
   }
 }
 
