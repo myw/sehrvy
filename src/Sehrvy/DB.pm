@@ -20,12 +20,12 @@ sub new {
 
   bless $self, $class;
 
-  $self->prepare_queries;
+  $self->_prepare_queries;
 
   $self;
 }
 
-sub prepare_queries {
+sub _prepare_queries {
   my $self = shift;
 
   # Vendor name from slug
