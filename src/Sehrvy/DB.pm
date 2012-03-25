@@ -3,7 +3,6 @@
 use strict;
 use warnings;
 
-
 use DBI;
 
 package Sehrvy::DB;
@@ -15,7 +14,8 @@ sub new {
   $self->{db} ||= 'dbi:mysql:sehrvy';
   $self->{user} ||= 'sehrvy_client';
 
-  $self->{dbh} = DBI->connect($self->{db}, $self->{user}) 
+  $self->{dbh} = DBI->connect($self->{db}, $self->{user}, undef,
+                              {AutoInactiveDestroy => 1})
     or die "Cannot connect: $DBI::errstr";
 
   bless $self, $class;

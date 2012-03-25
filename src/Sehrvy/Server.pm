@@ -16,11 +16,11 @@ our @valid_methods = ('GET', 'POST');
 our $ROOT_DIR = (File::Spec->splitpath(__FILE__))[1];
 
 # Request Handling
+my $db = Sehrvy::DB->new;
 
 sub process_http_request {
   my $self = shift;
 
-  my $db = Sehrvy::DB->new;
   $self->dispatch($ENV{REQUEST_METHOD}, $ENV{PATH_INFO}, $ENV{QUERY_STRING},$db);
 }
 
