@@ -44,11 +44,14 @@ sub DESTROY {
   # Explicitly close the connection when object is destroyed
   $self->{dbh}->close;
 }
+
+# TODO: refactor w/AUTOLOAD, or factory and global symbol table manip
 sub product_name {
   my ($self, $id) = @_;
 
   $self->{product_name}->execute($id);
-  return $self->{product_name}->fetchrow_arrayref->[0];
+  my $result_ref = $self->{product_name}->fetchrow_arrayref->[0];
+  return defined($result_ref) ? $result_ref->[0] : '';
 }
 
 sub vendor_name {
@@ -56,7 +59,7 @@ sub vendor_name {
 
   $self->{vendor_name}->execute($slug);
   my $result_ref = $self->{vendor_name}->fetchrow_arrayref;
-  return defined($result_ref) ? $result_ref->[0] : 0;
+  return defined($result_ref) ? $result_ref->[0] : '';
 }
 
 1;
