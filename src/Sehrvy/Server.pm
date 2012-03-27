@@ -36,7 +36,7 @@ sub dispatch {
       elsif(m{^/map}) { $self->serve('content/template/map.tmpl', undef, {name => 'Mappy'})}
       elsif(m{^/vendor/(.*)}) { $self->serve_vendor($1,$db)}
       elsif(m{^/test}) { $self->test_form }
-      elsif(m{^/query}) { $self->test_query }
+      elsif(m{^/query/(.*)}) { $self->handle_query($1, $query_string) }
       elsif(m{^/$}) { $self->serve('content/static/index.html')}
       else { $self->err_unknown_path($path_info) }
     }
@@ -92,6 +92,52 @@ sub serve {
   }
 }
 
+# Query handling
+
+sub handle_query {
+  my ($self, $path, $query_string) = @_;
+
+  sub handle_state_vendor {
+    my $vendor = shift;
+
+    content_type('application/json');
+
+    print JSON::to_json([$db->vendor_name($vendor)]);
+  };
+
+  sub handle_vendor_products {
+    my $vendor = shift;
+
+    content_type('application/json');
+
+    print JSON::to_json([$db->vendor_name($vendor)]);
+  };
+
+
+  if (!$query_string) {
+    $self->err_unknown_query($query_string);
+    return;
+  }
+  
+  my @query_type = split m{/}, $path;
+
+  if (@query_type < 2) {
+    $self->err_unknown_path($path);
+    return;
+  }
+
+  if      ($query_type[0] == 'state' && $query_type[1] == 'vendor') {
+    handle_state_vendor($query_string);
+  } elsif ($query_type[0] == 'vendor' && $query_type[1] == 'products') {
+    handle_vendor_products($query_string);
+  } else {
+
+    $self->err_unknown_path($path);
+  }
+
+
+}
+
 
 # Content Delivery Utilities
 
@@ -112,6 +158,15 @@ sub err_unknown_path {
   content_type;
   print "<h1>404 - Not Found</h1>\n";
   print "<p>The path <code>$path</code> is unavailable.</p>\n";
+}
+sub err_unknown_query {
+  my $self = shift;
+  my $query = shift;
+
+  $self->send_status(404, 'Not Found');
+  content_type;
+  print "<h1>404 - Not Found</h1>\n";
+  print "<p>No results match the query \"<code>$query</code>\".</p>\n";
 }
 
 sub err_unimplemented_method {
