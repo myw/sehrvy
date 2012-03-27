@@ -38,6 +38,12 @@ sub _prepare_queries {
 
 }
 
+sub DESTROY {
+  my $self = shift;
+
+  # Explicitly close the connection when object is destroyed
+  $self->{dbh}->close;
+}
 sub product_name {
   my ($self, $id) = @_;
 
