@@ -41,8 +41,8 @@ sub _prepare_queries {
 sub DESTROY {
   my $self = shift;
 
-  # Explicitly close the connection when object is destroyed
-  $self->{dbh}->close;
+  # Probably not necessary, but better safe than sorry
+  $self->{dbh}->close if defined($self->{dbh});
 }
 
 # TODO: refactor w/AUTOLOAD, or factory and global symbol table manip
