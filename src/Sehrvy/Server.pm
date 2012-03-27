@@ -126,9 +126,9 @@ sub handle_query {
     return;
   }
 
-  if      ($query_type[0] == 'state' && $query_type[1] == 'vendor') {
+  if      ($query_type[0] eq 'state'  && $query_type[1] eq 'vendor') {
     handle_state_vendor($query_string);
-  } elsif ($query_type[0] == 'vendor' && $query_type[1] == 'products') {
+  } elsif ($query_type[0] eq 'vendor' && $query_type[1] eq 'products') {
     handle_vendor_products($query_string);
   } else {
 
