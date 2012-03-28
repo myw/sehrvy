@@ -128,7 +128,7 @@ sub handle_query {
 
   if      ($query_type[0] eq 'state'  && $query_type[1] eq 'vendor') {
     handle_state_vendor($query_string);
-  } elsif ($query_type[0] eq 'vendor' && $query_type[1] eq 'products') {
+  } elsif ($query_type[0] eq 'products' && $query_type[1] eq 'vendor') {
     handle_vendor_products($query_string);
   } else {
 
