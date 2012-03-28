@@ -36,6 +36,13 @@ sub _prepare_queries {
   $self->{product_name} = $self->{dbh}->prepare(
     'SELECT product_name FROM Products WHERE product_id=?');
 
+  # Sum total of vendor's attestations by product
+  $self->{vendor_totals_by_state} = $self->{dbh}->prepare(
+    'SELECT product_name, COUNT(*) from Everything WHERE vendor_slug=? GROUP BY product_name');
+
+  # Sum total of vendor's attestations by state
+  $self->{vendor_totals_by_product} = $self->{dbh}->prepare(
+    'SELECT state_name, COUNT(*) from Everything WHERE vendor_slug=? GROUP BY state_name');
 }
 
 sub DESTROY {
@@ -60,6 +67,28 @@ sub vendor_name {
   $self->{vendor_name}->execute($slug);
   my $result_ref = $self->{vendor_name}->fetchrow_arrayref;
   return defined($result_ref) ? $result_ref->[0] : '';
+}
+
+sub vendor_totals_by_state {
+  my ($self, $vendor) = @_;
+
+  $self->{vendor_totals_by_state}->execute($vendor);
+
+  # Iterator
+  return sub {
+    $self->{vendor_totals_by_state}->fetchrow_arrayref;
+  }
+}
+
+sub vendor_totals_by_product {
+  my ($self, $vendor) = @_;
+
+  $self->{vendor_totals_by_product}->execute($vendor);
+
+  # Iterator
+  return sub {
+    $self->{vendor_totals_by_product}->fetchrow_arrayref;
+  }
 }
 
 1;

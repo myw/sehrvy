@@ -51,7 +51,7 @@ sub serve_vendor{
   #print $file . "||\n";
   #print $db->vendor_name($file) . "||\n";
   my $name = $db->vendor_name($slug);
-  if($name){ 
+  if($name){
     $self->serve('content/template/vendor.tmpl',undef,{slug=>$slug,name=>$name});
   }else{
     $self->err_unknown_path('vendor/'.$slug);
@@ -101,8 +101,13 @@ sub handle_query {
     my $vendor = shift;
 
     content_type('application/json');
-
-    print JSON::to_json([$db->vendor_name($vendor)]);
+    print JSON::to_json(
+      make_gcode_sum_table(
+        $db->vendor_totals_by_state($vendor),
+        'State',
+        'Attestations'
+      )
+    );
   };
 
   sub handle_vendor_products {
@@ -110,7 +115,13 @@ sub handle_query {
 
     content_type('application/json');
 
-    print JSON::to_json([$db->vendor_name($vendor)]);
+    print JSON::to_json(
+      make_gcode_sum_table(
+        $db->vendor_totals_by_product($vendor),
+        'Product',
+        'Attestations'
+      )
+    );
   };
 
 
@@ -118,7 +129,7 @@ sub handle_query {
     $self->err_unknown_query($query_string);
     return;
   }
-  
+
   my @query_type = split m{/}, $path;
 
   if (@query_type < 2) {
@@ -134,8 +145,30 @@ sub handle_query {
 
     $self->err_unknown_path($path);
   }
+}
 
+sub make_gcode_sum_table {
+  my ($iterator, $item_header, $sum_header) = @_;
 
+  my @rows;
+
+  # Use the google chart table format
+  while (defined(my $row = $iterator->())) {
+    my @row_data;
+    for my $item (@$row) {
+      push @row_data, {v => $item};
+    }
+    my $row_hash = {c => \@row_data};
+    push @rows, $row_hash;
+  }
+
+  my $table = {
+    cols => [
+      {label => $item_header, type => 'string'},
+      {label => $sum_header,  type => 'number'}
+    ],
+    rows => \@rows
+  };
 }
 
 
@@ -200,12 +233,11 @@ sub test_query {
   my $self = shift;
 
   content_type('application/json');
-  #print '[2, 3, 4, {"asdf": "boo", "jasks": "narf"}, ["3", 11, 14, 12.3, "doggy"]]';
-  #print JSON::to_json([2, 3, 4, {"asdf" => "boo", "jasks" => "narf"}, ["3", 11, 14, 12.3, "doggy"]]);
+
   print JSON::to_json({
     cols => [
-      {label => 'State', type => 'string'}, 
-      {label => 'Score', type => 'number'} 
+      {label => 'State', type => 'string'},
+      {label => 'Score', type => 'number'}
     ],
     rows => [
       {c => [{v => "US-TX"}, {v => 150}]},
