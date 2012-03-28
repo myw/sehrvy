@@ -169,6 +169,20 @@ sub make_gcode_sum_table {
     ],
     rows => \@rows
   };
+
+  # Table example: 
+  #JSON::to_json({
+  #  cols => [
+  #    {label => 'State', type => 'string'},
+  #    {label => 'Score', type => 'number'}
+  #  ],
+  #  rows => [
+  #    {c => [{v => "US-TX"}, {v => 150}]},
+  #    {c => [{v => "US-MA"}, {v => 250}]},
+  #    {c => [{v => "US-MN"}, {v => 350}]},
+  #    {c => [{v => "US-WI"}, {v => 450}]}
+  #  ]
+  #});
 }
 
 
@@ -227,25 +241,6 @@ sub test_form {
   }
 
   print "</body></html>\n";
-}
-
-sub test_query {
-  my $self = shift;
-
-  content_type('application/json');
-
-  print JSON::to_json({
-    cols => [
-      {label => 'State', type => 'string'},
-      {label => 'Score', type => 'number'}
-    ],
-    rows => [
-      {c => [{v => "US-TX"}, {v => 150}]},
-      {c => [{v => "US-MA"}, {v => 250}]},
-      {c => [{v => "US-MN"}, {v => 350}]},
-      {c => [{v => "US-WI"}, {v => 450}]}
-    ]
-  });
 }
 
 1;
