@@ -50,7 +50,7 @@ sub product_name {
   my ($self, $id) = @_;
 
   $self->{product_name}->execute($id);
-  my $result_ref = $self->{product_name}->fetchrow_arrayref->[0];
+  my $result_ref = $self->{product_name}->fetchrow_arrayref;
   return defined($result_ref) ? $result_ref->[0] : '';
 }
 
