@@ -88,10 +88,10 @@ sub create_tables {
            )") or die "Cannot create table: " . $dbh->errstr ();
 
   $dbh->do("CREATE VIEW VendorProducts AS
-           SELECT Vendors.vendor_name , Products.product_name
+           SELECT Vendors.vendor_name , Vendors.vendor_slug , Products.product_name
            FROM Vendors INNER JOIN Products ON Vendors.vendor_id=Products.vendor_id") or die "Cannot create view: " . $dbh->errstr ();
   $dbh->do("CREATE VIEW ProductVersions AS
-           SELECT Vendors.vendor_id , Vendors.vendor_name ,
+           SELECT Vendors.vendor_id , Vendors.vendor_name , Vendors.vendor_slug , 
            Products.product_id , Products.product_name ,
            Versions.version_id , Versions.version_name
            FROM
@@ -132,6 +132,7 @@ sub create_tables {
            Attestations.provider_specialty_id,
            Attestations.provider_state,
            Vendors.vendor_name,
+           Vendors.vendor_slug,
            Products.product_name,
            Versions.version_name,
            Attestations.attestation_classification,
@@ -354,7 +355,7 @@ sub slugify {
 
     $slug = "@sluglist";
 
-  } while(defined($used_slugs->{$slug}));
+  } while(exists($used_slugs->{$slug}));
 
   # Update the cache and used slugs hash
   $used_slugs->{$slug} = 1;
