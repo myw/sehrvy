@@ -110,7 +110,7 @@ sub handle_query {
     );
   };
 
-  sub handle_vendor_products {
+  sub handle_products_vendor {
     my $vendor = shift;
 
     content_type('application/json');
@@ -140,7 +140,7 @@ sub handle_query {
   if      ($query_type[0] eq 'state'  && $query_type[1] eq 'vendor') {
     handle_state_vendor($query_string);
   } elsif ($query_type[0] eq 'products' && $query_type[1] eq 'vendor') {
-    handle_vendor_products($query_string);
+    handle_products_vendor($query_string);
   } else {
 
     $self->err_unknown_path($path);

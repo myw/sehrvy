@@ -37,11 +37,11 @@ sub _prepare_queries {
     'SELECT product_name FROM Products WHERE product_id=?');
 
   # Sum total of vendor's attestations by product
-  $self->{vendor_totals_by_state} = $self->{dbh}->prepare(
+  $self->{vendor_totals_by_product} = $self->{dbh}->prepare(
     'SELECT product_name, COUNT(*) from Everything WHERE vendor_slug=? GROUP BY product_name');
 
   # Sum total of vendor's attestations by state
-  $self->{vendor_totals_by_product} = $self->{dbh}->prepare(
+  $self->{vendor_totals_by_state} = $self->{dbh}->prepare(
     'SELECT state_name, COUNT(*) from Everything WHERE vendor_slug=? GROUP BY state_name');
 }
 
